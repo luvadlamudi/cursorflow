@@ -1,0 +1,41 @@
+{
+  "name": "cursorflow",
+  "version": "0.1.0",
+  "description": "Learn how people move through your site, then replay the average visitor.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/model.ts",
+    "./track": "./src/track.ts",
+    "./server": "./src/server.ts",
+    "./replay": "./src/replay.ts"
+  },
+  "main": "./src/model.ts",
+  "types": "./src/model.ts",
+  "typesVersions": {
+    "*": {
+      "track": [
+        "src/track.ts"
+      ],
+      "server": [
+        "src/server.ts"
+      ],
+      "replay": [
+        "src/replay.ts"
+      ]
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

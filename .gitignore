@@ -1,0 +1,5 @@
+node_modules
+.cursorflow
+__pycache__
+*.egg-info
+.venv

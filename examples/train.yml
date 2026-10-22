@@ -1,0 +1,20 @@
+# Copy this to .github/workflows/ in your site's repo and add DATABASE_URL as a repository secret
+# (Settings > Secrets and variables > Actions). Change the cron line to retrain on your own schedule.
+name: Train cursorflow
+
+on:
+  schedule:
+    - cron: "0 9 * * *" # every day at 09:00 UTC
+  workflow_dispatch: # adds a "Run workflow" button for training on demand
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "cursorflow-train @ git+https://github.com/luvadlamudi/cursorflow#subdirectory=train"
+      - run: cursorflow-train
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
