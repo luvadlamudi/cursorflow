@@ -2,7 +2,7 @@
 
 See how people actually move through your site.
 
-Analytics on small sites, like portfolios and landing pages, usually stops at page views and clicks. cursorflow tracks how desktop visitors move: what they hover, what they read, how far down each section they get, and where they leave. A nightly job turns that into a model, and a player replays the common paths on a live copy of your site.
+Analytics on small sites, like portfolios and landing pages, usually stops at page views and clicks. cursorflow tracks how desktop visitors move: what they hover, what they read, how far down each section they get, and where they leave. A nightly machine learning job turns that into a model, and a player replays the common paths on a live copy of your site.
 
 It's running on [lucasvad.com/work/cursorflow](https://lucasvad.com/work/cursorflow).
 
