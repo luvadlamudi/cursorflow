@@ -1,6 +1,8 @@
-"""cursorflow-train: read every batch, clean it, fit the model, save it.
+"""cursorflow-train: read recent batches, clean them, fit the model, save it.
 
-Uses DATABASE_URL when it's set, otherwise the local .cursorflow folder.
+Each run trains from scratch on the last --days days of visits, then deletes anything older, so
+the model follows how the site is used now and the database stays the same size. Uses
+DATABASE_URL when it's set, otherwise the local .cursorflow folder.
 """
 
 import argparse
@@ -9,19 +11,22 @@ from pathlib import Path
 
 from .flow import train
 from .sessions import build_sessions, clean
-from .store import load_batches, now_iso, save_model
+from .store import load_batches, now_iso, prune, save_model
 
 
 def main():
     parser = argparse.ArgumentParser(prog="cursorflow-train", description=__doc__.splitlines()[0])
     parser.add_argument("--database-url", default=os.environ.get("DATABASE_URL"))
     parser.add_argument("--dir", type=Path, default=Path(".cursorflow"), help="local folder when there's no database")
-    parser.add_argument("--dry-run", action="store_true", help="print the summary without saving")
+    parser.add_argument(
+        "--days", type=int, default=int(os.environ.get("CURSORFLOW_DAYS", 30)), help="train on this many days of visits, 0 for all"
+    )
+    parser.add_argument("--dry-run", action="store_true", help="print the summary without saving or deleting anything")
     args = parser.parse_args()
 
-    batches = load_batches(args.database_url, args.dir)
+    batches = load_batches(args.database_url, args.dir, args.days)
     if not batches:
-        print("No batches yet. Nothing to train on.")
+        print(f"No batches in the last {args.days} days. Nothing to train on." if args.days else "No batches yet. Nothing to train on.")
         return
 
     raw = build_sessions(batches)
@@ -38,6 +43,7 @@ def main():
     model = {
         "version": 1,
         "trainedAt": now_iso(),
+        "days": args.days,
         "since": min(b["at"] for b in batches).isoformat(timespec="seconds"),
         "sessions": {"total": report["total"], "kept": report["kept"]},
         "points": sum(len(s.moves) for s in raw),
@@ -55,6 +61,7 @@ def main():
 
     if not args.dry_run:
         print(f"Saved to {save_model(model, args.database_url, args.dir)}")
+        prune(args.database_url, args.dir, args.days)
 
 
 if __name__ == "__main__":

@@ -70,6 +70,8 @@ export type FlowModel = {
   // Set on models trained from simulated visits (examples/simulate.py) rather than real ones.
   sample?: boolean;
   trainedAt: string;
+  // How many days of visits it was trained on (0 means all of them), and the earliest one.
+  days?: number;
   since: string;
   sessions: { total: number; kept: number };
   points: number;

@@ -15,6 +15,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install "cursorflow-train @ git+https://github.com/luvadlamudi/cursorflow#subdirectory=train"
-      - run: cursorflow-train
+      # Trains on the last 30 days of visits and deletes anything older. Raise it if your site gets
+      # few visits, lower it if it changes often.
+      - run: cursorflow-train --days 30
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

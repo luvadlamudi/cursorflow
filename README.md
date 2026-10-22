@@ -10,7 +10,9 @@ It's running on [lucasvad.com/work/cursorflow](https://lucasvad.com/work/cursorf
 
 The tracker samples the cursor about 15 times a second, records which tagged elements and sections people spend time on, and sends small batches in the background. It only runs on desktop, pauses when someone goes idle, and stores no cookies, IPs or user agents.
 
-The trainer drops bots and outliers, groups visits by how alike they are, and keeps a real visit from each group along with how many visits it represents. It also measures how much of each section people read, and where visits end. Cursor motion is averaged with DTW Barycenter Averaging so the replay moves like a person.
+The trainer runs three algorithms. An Isolation Forest drops outlier sessions by speed, curvature and activity. k-medoids, over the edit distance between visits' sequences of stops, groups visits by how alike they are and keeps the real visit at the center of each group, along with how many visits it represents. DTW Barycenter Averaging averages cursor motion between stops, keeping the overshoots and hesitations a plain average would flatten. It also measures how much of each section people read, and where visits end.
+
+Retraining runs on a schedule and starts from scratch each time, on the last 30 days of visits. Anything older is deleted, so the model follows how the site is used now and the database stays the same size. Set the window with `--days`.
 
 ## Setup
 
@@ -52,7 +54,7 @@ These steps assume Next.js on Vercel.
    </section>
    ```
 
-6. Copy [examples/train.yml](examples/train.yml) to `.github/workflows/` and add `DATABASE_URL` as a repository secret. It retrains daily at 09:00 UTC; change the `cron` line to pick another time.
+6. Copy [examples/train.yml](examples/train.yml) to `.github/workflows/` and add `DATABASE_URL` as a repository secret. It retrains daily at 09:00 UTC on the last 30 days; change the `cron` line or `--days` to suit your site.
 
 7. Show it. Load the model on the server and mount the player in a client component:
 
