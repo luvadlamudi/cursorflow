@@ -52,7 +52,7 @@ def dba(curves: list[np.ndarray], start: np.ndarray, iterations: int = 10) -> np
     return avg
 
 
-def average(curves: list[np.ndarray], limit: int = 150) -> tuple[np.ndarray, int]:
+def average(curves: list[np.ndarray], limit: int = 80) -> tuple[np.ndarray, int]:
     """The DBA average of `curves` after dropping outliers. Returns the curve and how many were used."""
     rng = np.random.default_rng(0)
     if len(curves) > limit:

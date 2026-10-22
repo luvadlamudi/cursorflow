@@ -43,11 +43,15 @@ def main():
         "points": sum(len(s.moves) for s in raw),
         **fitted,
     }
-    steps = [f"{'read ' if s['kind'] == 'read' else ''}{s['anchor']} ({s['dwell'] / 1000:.1f}s)" for s in model["path"]]
-    print(f"Typical visit: {' -> '.join(steps) or '(empty)'}")
+    for i, p in enumerate(model["patterns"], 1):
+        steps = [f"{'read ' if s['kind'] == 'read' else ''}{s['anchor']} ({s['dwell'] / 1000:.1f}s)" for s in p["stops"]]
+        print(f"Pattern {i} ({p['share']:.0%} of visits): {' -> '.join(steps)}")
     print(f"Learned moves: {len(model['moves'])}, fallback from {model['fallback']['samples']} moves")
+    for x in model["attention"]:
+        bars = "".join(" .:-=+*#%@"[min(9, int(b * 9.99))] for b in x["bands"])
+        print(f"  {x['route']} {x['section']:<10} {x['seconds']:>5.1f}s  [{bars}]")
     for x in model["exits"]:
-        print(f"  {x['rate']:.0%} of visits end after {'reading ' if x['kind'] == 'read' else ''}{x['anchor']} ({x['visits']} visits)")
+        print(f"  {x['rate']:.0%} of visits that reached {x['route']} {x['section']} ended there ({x['visits']})")
 
     if not args.dry_run:
         print(f"Saved to {save_model(model, args.database_url, args.dir)}")

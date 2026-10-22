@@ -15,6 +15,8 @@ export type TrackOptions = {
 };
 
 const SESSION_KEY = "cursorflow:sid";
+// Section windows are rounded to this, so tiny scroll jitters don't each become an event.
+const WINDOW_STEP = 0.02;
 const START_KEY = "cursorflow:t0";
 
 // Mouse-and-keyboard devices only, never inside a frame (the replay embeds the site), and never
@@ -49,6 +51,8 @@ export function track(options: TrackOptions = {}): () => void {
   let section = "";
   let lastInput = Date.now();
   let sampler = 0;
+  let ticks = 0;
+  let windows = new Map<string, string>();
 
   const setAnchor = (el: Element | null) => {
     if (el === anchor) return;
@@ -105,6 +109,38 @@ export function track(options: TrackOptions = {}): () => void {
     document.querySelectorAll("[data-flow-section]").forEach((el) => sections.observe(el));
   };
 
+  // How much of each section is on screen: the top and bottom of the visible part, as shares of
+  // the section's own height. Shares rather than pixels, so the result means the same thing at any
+  // window size or zoom level. Sections later in the page are drawn over earlier ones (a fixed hero
+  // sits under the content), so only the parts nothing later covers count.
+  const measureSections = () => {
+    const seen = new Map<string, string>();
+    const covered: [number, number][] = [];
+    const round = (n: number) => Math.round(n / WINDOW_STEP) * WINDOW_STEP;
+    for (const el of Array.from(document.querySelectorAll("[data-flow-section]")).reverse()) {
+      const r = el.getBoundingClientRect();
+      const top = Math.max(0, r.top);
+      const bottom = Math.min(innerHeight, r.bottom);
+      if (bottom - top < 1 || r.height < 1) continue;
+      let pieces: [number, number][] = [[top, bottom]];
+      for (const [a, b] of covered) {
+        pieces = pieces.flatMap(([x, y]): [number, number][] => [[x, Math.min(y, a)], [Math.max(x, b), y]]).filter(([x, y]) => y - x >= 1);
+      }
+      covered.push([top, bottom]);
+      if (!pieces.length) continue;
+      const lo = Math.min(...pieces.map((p) => p[0]));
+      const hi = Math.max(...pieces.map((p) => p[1]));
+      seen.set(el.getAttribute("data-flow-section")!, `${round((lo - r.top) / r.height)},${round((hi - r.top) / r.height)}`);
+    }
+    for (const [id, w] of seen) {
+      if (windows.get(id) === w) continue;
+      const [from, to] = w.split(",").map(Number);
+      events.push(["w", now(), id, from, to]);
+    }
+    for (const id of Array.from(windows.keys())) if (!seen.has(id)) events.push(["w", now(), id, 0, 0]);
+    windows = seen;
+  };
+
   // Stops sampling, and records when the visitor was last actually there, so nobody gets credited
   // with reading a section they walked away from.
   const idle = (since: number) => {
@@ -112,6 +148,8 @@ export function track(options: TrackOptions = {}): () => void {
     sampler = 0;
     events.push(["i", now(), since]);
     setAnchor(null);
+    // Re-sent when they're back, so the trainer knows what they returned to.
+    windows = new Map();
     flush();
   };
 
@@ -120,6 +158,7 @@ export function track(options: TrackOptions = {}): () => void {
     if (location.pathname !== route) {
       route = location.pathname;
       section = "";
+      windows = new Map();
       events.push(["r", now(), route]);
       // The new page may still be rendering; give it a moment before looking for its sections.
       setTimeout(watchSections, 300);
@@ -129,10 +168,14 @@ export function track(options: TrackOptions = {}): () => void {
       events.push(["m", now(), x, y]);
     }
     const s = Math.round(scrollY);
-    if (s !== scroll) {
+    const scrolled = s !== scroll;
+    if (scrolled) {
       scroll = s;
       events.push(["s", now(), s, document.documentElement.scrollHeight - innerHeight]);
     }
+    // After a scroll, and about once a second otherwise (things like an expanding list change a
+    // section's height without any scrolling).
+    if (scrolled || ++ticks % 15 === 0) measureSections();
   }
 
   function flush() {

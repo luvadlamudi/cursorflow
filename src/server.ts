@@ -28,7 +28,7 @@ create table if not exists cursorflow_models (
 
 const MAX_BYTES = 64_000;
 const MAX_EVENTS = 4000;
-const KINDS = new Set(["m", "s", "e", "l", "c", "r", "v", "i"]);
+const KINDS = new Set(["m", "s", "e", "l", "c", "r", "v", "w", "i"]);
 
 let sql: postgres.Sql | undefined;
 let ready: Promise<unknown> | undefined;
