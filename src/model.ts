@@ -50,8 +50,9 @@ export type Move = {
 export type Attention = {
   route: string;
   section: string;
-  // Average seconds on screen per visit that reached it.
+  // Average seconds on screen per visit that reached it, and how many visits did.
   seconds: number;
+  visits: number;
   // Each band's time relative to the busiest band (1).
   bands: number[];
 };

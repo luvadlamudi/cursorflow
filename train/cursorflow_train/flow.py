@@ -292,6 +292,7 @@ def train(sessions: list[Session]) -> dict:
             "section": key[1],
             # Each band holds the time it was on screen; the section's time is its best-seen band.
             "seconds": round(float(ms.max()) / reached[key] / 1000, 1),
+            "visits": reached[key],
             "bands": [round(float(x), 3) for x in ms / ms.max()],
             "_order": float(np.median(first_seen[key])),
         })
