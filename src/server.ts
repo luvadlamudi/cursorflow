@@ -35,7 +35,12 @@ let ready: Promise<unknown> | undefined;
 
 // One connection per server instance, and the tables are created the first time it's used.
 async function db(url: string) {
-  sql ??= postgres(url, { max: 1 });
+  // Hosted Postgres URLs (Neon's, for one) include channel_binding, a libpq-only option this driver
+  // would pass to the server as a setting, which the server rejects. And pooled connections can't
+  // hold prepared statements between requests.
+  const clean = new URL(url);
+  clean.searchParams.delete("channel_binding");
+  sql ??= postgres(clean.toString(), { max: 1, prepare: false });
   ready ??= sql.unsafe(SCHEMA);
   await ready;
   return sql;
